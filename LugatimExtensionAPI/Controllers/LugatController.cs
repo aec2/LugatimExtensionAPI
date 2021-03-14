@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
+using LugatimExtensionAPI.Contracts;
 
 namespace LugatimExtensionAPI.Controllers
 {
@@ -13,20 +14,22 @@ namespace LugatimExtensionAPI.Controllers
     [Route("[controller]")]
     public class LugatController : ControllerBase
     {
+        private readonly IWordManager wordManager;
+
+        public LugatController(IWordManager wordManager)
+        {
+            this.wordManager = wordManager;
+        }
 
         // TODO: search resultta kökten türeyen kelimeler gelince nasıl aksiyon alınacağına bakılacak.
         [HttpGet("{word}")]
-        public async Task<string> Get(string word)
+        public async Task<IActionResult> GetAsync(string word)
+        
         {
-            var httpClient = new HttpClient();
-            HttpResponseMessage result = await httpClient.GetAsync(string.Concat(LugatConts.LugatBaseUrl, word));
-            var response = await result.Content.ReadAsStringAsync();
-            var doc = new HtmlDocument();
-            doc.LoadHtml(response);
+           var result = await wordManager.GetWordHttpByUrlAsync(word);
+           var wordModel = wordManager.ParseWordResponseToModel(result, word);
 
-            var htmlBody = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/div[1]/div[2]/div/div[1]/div/p");
-
-            return htmlBody != null ? htmlBody.InnerText.Trim() : "CIKMAZ SOKAK";
+            return Ok(wordModel);
         }
     }
 }
